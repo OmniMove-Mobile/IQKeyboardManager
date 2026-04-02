@@ -29,6 +29,21 @@
 NS_EXTENSION_UNAVAILABLE_IOS("Unavailable in extension")
 @implementation IQBarButtonItem
 
+- (void)_handleCustomButtonTap:(id)sender
+{
+    [self.invocation invoke];
+}
+
+- (UIButton *)_toolbarCustomButton
+{
+    if ([self.customView isKindOfClass:[UIButton class]])
+    {
+        return (UIButton *)self.customView;
+    }
+
+    return nil;
+}
+
 -(void)initialize
 {
     NSArray <NSNumber*> *states = @[@(UIControlStateNormal),@(UIControlStateHighlighted),@(UIControlStateDisabled),@(UIControlStateFocused)];
@@ -81,6 +96,42 @@ NS_EXTENSION_UNAVAILABLE_IOS("Unavailable in extension")
     textAttributes[NSForegroundColorAttributeName] = tintColor;
     
     [self setTitleTextAttributes:textAttributes forState:UIControlStateNormal];
+
+    UIButton *button = [self _toolbarCustomButton];
+    [button setTintColor:tintColor];
+    [button setTitleColor:tintColor forState:UIControlStateNormal];
+    [button setTitleColor:[tintColor colorWithAlphaComponent:0.35] forState:UIControlStateDisabled];
+}
+
+- (void)setEnabled:(BOOL)enabled
+{
+    [super setEnabled:enabled];
+
+    UIButton *button = [self _toolbarCustomButton];
+    button.enabled = enabled;
+    button.alpha = enabled ? 1.0 : 0.35;
+}
+
+- (void)setCustomView:(UIView *)customView
+{
+    [super setCustomView:customView];
+
+    UIButton *button = [self _toolbarCustomButton];
+
+    if (button)
+    {
+        [button removeTarget:nil action:NULL forControlEvents:UIControlEventTouchUpInside];
+        [button addTarget:self action:@selector(_handleCustomButtonTap:) forControlEvents:UIControlEventTouchUpInside];
+        button.enabled = self.enabled;
+        button.alpha = self.enabled ? 1.0 : 0.35;
+
+        if (self.tintColor)
+        {
+            [button setTintColor:self.tintColor];
+            [button setTitleColor:self.tintColor forState:UIControlStateNormal];
+            [button setTitleColor:[self.tintColor colorWithAlphaComponent:0.35] forState:UIControlStateDisabled];
+        }
+    }
 }
 
 - (instancetype)initWithBarButtonSystemItem:(UIBarButtonSystemItem)systemItem target:(nullable id)target action:(nullable SEL)action

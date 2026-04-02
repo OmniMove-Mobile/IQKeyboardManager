@@ -138,6 +138,95 @@ static inline void IQConfigureToolbarButtonStyleForIOS26(__unused UIBarButtonIte
 }
 #endif
 
+static inline BOOL IQShouldUseCustomAccessoryToolbarItemsForIOS26(void)
+{
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 260000
+    if (@available(iOS 26.0, *))
+    {
+        return YES;
+    }
+#endif
+
+    return NO;
+}
+
+static IQBarButtonItem *IQToolbarCustomSpacerItem(CGFloat width)
+{
+    IQBarButtonItem *item = [[IQBarButtonItem alloc] init];
+    UIView *view = [[UIView alloc] initWithFrame:CGRectMake(0, 0, MAX(0, width), 32)];
+    view.backgroundColor = UIColor.clearColor;
+    item.customView = view;
+    return item;
+}
+
+static NSString *IQToolbarTitleForSystemItem(UIBarButtonSystemItem systemItem, NSString *fallbackTitle)
+{
+    switch (systemItem)
+    {
+        case UIBarButtonSystemItemDone:     return fallbackTitle ?: @"Done";
+        case UIBarButtonSystemItemCancel:   return fallbackTitle ?: @"Cancel";
+        default:                            return fallbackTitle;
+    }
+}
+
+static IQBarButtonItem *IQToolbarCustomButtonItem(NSString *title, UIImage *image, id target, SEL action, NSString *accessibilityLabel)
+{
+    IQBarButtonItem *item = [[IQBarButtonItem alloc] init];
+    UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem];
+    button.backgroundColor = UIColor.clearColor;
+    button.contentEdgeInsets = UIEdgeInsetsMake(6, 10, 6, 10);
+
+    if (image)
+    {
+        [button setImage:image forState:UIControlStateNormal];
+    }
+    else
+    {
+        [button setTitle:title forState:UIControlStateNormal];
+        button.titleLabel.font = [UIFont systemFontOfSize:17 weight:UIFontWeightRegular];
+    }
+
+    [button sizeToFit];
+
+    CGFloat width = MAX(CGRectGetWidth(button.bounds), image ? 36 : 44);
+    button.frame = CGRectMake(0, 0, width, 32);
+    button.accessibilityLabel = accessibilityLabel;
+    button.accessibilityIdentifier = accessibilityLabel;
+
+    item.customView = button;
+    [item setTarget:target action:action];
+    item.accessibilityLabel = accessibilityLabel;
+    item.accessibilityIdentifier = accessibilityLabel;
+
+    return item;
+}
+
+static CGFloat IQToolbarItemWidth(UIBarButtonItem *item)
+{
+    if (item.customView)
+    {
+        return CGRectGetWidth(item.customView.bounds);
+    }
+
+    return item.width;
+}
+
+static CGFloat IQToolbarTitleWidth(IQToolbar *toolbar, NSString *titleText)
+{
+    toolbar.titleBarButton.title = titleText;
+
+    UIView *titleView = toolbar.titleBarButton.customView;
+    CGSize fittedSize = [titleView systemLayoutSizeFittingSize:UILayoutFittingCompressedSize];
+
+    if (fittedSize.width <= 0 && titleText.length != 0)
+    {
+        fittedSize = [titleText sizeWithAttributes:@{NSFontAttributeName: [UIFont systemFontOfSize:13.0]}];
+        fittedSize.width += 16;
+    }
+
+    return ceil(fittedSize.width);
+}
+
 -(IQToolbar *)keyboardToolbar
 {
     IQToolbar *keyboardToolbar = nil;
@@ -229,8 +318,15 @@ static inline void IQConfigureToolbarButtonStyleForIOS26(__unused UIBarButtonIte
     
     if (nilButton == nil)
     {
-        nilButton = [[IQBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil];
-        IQConfigureToolbarSpacerItemForIOS26(nilButton);
+        if (IQShouldUseCustomAccessoryToolbarItemsForIOS26())
+        {
+            nilButton = IQToolbarCustomSpacerItem(0);
+        }
+        else
+        {
+            nilButton = [[IQBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil];
+            IQConfigureToolbarSpacerItemForIOS26(nilButton);
+        }
     }
     
     return nilButton;
@@ -247,6 +343,142 @@ static inline void IQConfigureToolbarButtonStyleForIOS26(__unused UIBarButtonIte
     IQToolbar *toolbar = self.keyboardToolbar;
     
     NSMutableArray<UIBarButtonItem*> *items = [[NSMutableArray alloc] init];
+
+    if (IQShouldUseCustomAccessoryToolbarItemsForIOS26())
+    {
+        CGFloat toolbarWidth = CGRectGetWidth(toolbar.bounds) ?: CGRectGetWidth(toolbar.frame);
+
+        if (previousBarButtonConfiguration)
+        {
+            IQBarButtonItem *previousItem = nil;
+
+            if (previousBarButtonConfiguration.image)
+            {
+                previousItem = IQToolbarCustomButtonItem(previousBarButtonConfiguration.title, previousBarButtonConfiguration.image, target, previousBarButtonConfiguration.action, previousBarButtonConfiguration.accessibilityLabel);
+            }
+            else
+            {
+                NSString *title = previousBarButtonConfiguration.title;
+                if (title.length == 0)
+                {
+                    title = IQToolbarTitleForSystemItem(previousBarButtonConfiguration.barButtonSystemItem, previousBarButtonConfiguration.accessibilityLabel);
+                }
+
+                previousItem = IQToolbarCustomButtonItem(title, nil, target, previousBarButtonConfiguration.action, previousBarButtonConfiguration.accessibilityLabel);
+            }
+
+            previousItem.invocation = toolbar.previousBarButton.invocation ?: previousItem.invocation;
+            previousItem.enabled = toolbar.previousBarButton.enabled;
+            previousItem.tag = toolbar.previousBarButton.tag;
+            toolbar.previousBarButton = previousItem;
+            [items addObject:previousItem];
+        }
+
+        if (previousBarButtonConfiguration != nil && nextBarButtonConfiguration != nil)
+        {
+            [items addObject:IQToolbarCustomSpacerItem(6)];
+        }
+
+        if (nextBarButtonConfiguration)
+        {
+            IQBarButtonItem *nextItem = nil;
+
+            if (nextBarButtonConfiguration.image)
+            {
+                nextItem = IQToolbarCustomButtonItem(nextBarButtonConfiguration.title, nextBarButtonConfiguration.image, target, nextBarButtonConfiguration.action, nextBarButtonConfiguration.accessibilityLabel);
+            }
+            else
+            {
+                NSString *title = nextBarButtonConfiguration.title;
+                if (title.length == 0)
+                {
+                    title = IQToolbarTitleForSystemItem(nextBarButtonConfiguration.barButtonSystemItem, nextBarButtonConfiguration.accessibilityLabel);
+                }
+
+                nextItem = IQToolbarCustomButtonItem(title, nil, target, nextBarButtonConfiguration.action, nextBarButtonConfiguration.accessibilityLabel);
+            }
+
+            nextItem.invocation = toolbar.nextBarButton.invocation ?: nextItem.invocation;
+            nextItem.enabled = toolbar.nextBarButton.enabled;
+            nextItem.tag = toolbar.nextBarButton.tag;
+            toolbar.nextBarButton = nextItem;
+            [items addObject:nextItem];
+        }
+
+        IQBarButtonItem *doneItem = nil;
+
+        if (rightBarButtonConfiguration)
+        {
+            if (rightBarButtonConfiguration.image)
+            {
+                doneItem = IQToolbarCustomButtonItem(rightBarButtonConfiguration.title, rightBarButtonConfiguration.image, target, rightBarButtonConfiguration.action, rightBarButtonConfiguration.accessibilityLabel);
+            }
+            else
+            {
+                NSString *title = rightBarButtonConfiguration.title;
+                if (title.length == 0)
+                {
+                    title = IQToolbarTitleForSystemItem(rightBarButtonConfiguration.barButtonSystemItem, rightBarButtonConfiguration.accessibilityLabel);
+                }
+
+                doneItem = IQToolbarCustomButtonItem(title, nil, target, rightBarButtonConfiguration.action, rightBarButtonConfiguration.accessibilityLabel);
+            }
+
+            doneItem.invocation = toolbar.doneBarButton.invocation ?: doneItem.invocation;
+            doneItem.enabled = toolbar.doneBarButton.enabled;
+            doneItem.tag = toolbar.doneBarButton.tag;
+            toolbar.doneBarButton = doneItem;
+        }
+
+        CGFloat occupiedWidth = 0;
+        for (UIBarButtonItem *item in items)
+        {
+            occupiedWidth += IQToolbarItemWidth(item);
+        }
+
+        if (titleText.length != 0)
+        {
+            CGFloat titleWidth = IQToolbarTitleWidth(toolbar, titleText);
+            CGFloat doneWidth = IQToolbarItemWidth(doneItem);
+            CGFloat remainingWidth = MAX(0, toolbarWidth - occupiedWidth - titleWidth - doneWidth);
+            CGFloat leftSpacerWidth = floor(remainingWidth / 2.0);
+            CGFloat rightSpacerWidth = remainingWidth - leftSpacerWidth;
+
+            [items addObject:IQToolbarCustomSpacerItem(leftSpacerWidth)];
+            [items addObject:toolbar.titleBarButton];
+            [items addObject:IQToolbarCustomSpacerItem(rightSpacerWidth)];
+        }
+        else
+        {
+            toolbar.titleBarButton.title = nil;
+
+            if (doneItem)
+            {
+                CGFloat doneWidth = IQToolbarItemWidth(doneItem);
+                CGFloat springWidth = MAX(0, toolbarWidth - occupiedWidth - doneWidth);
+                [items addObject:IQToolbarCustomSpacerItem(springWidth)];
+            }
+        }
+
+        if (doneItem)
+        {
+            [items addObject:doneItem];
+        }
+
+        [toolbar setItems:items];
+        [(UITextField*)self setInputAccessoryView:toolbar];
+
+        if ([self respondsToSelector:@selector(keyboardAppearance)])
+        {
+            switch ([(UITextField*)self keyboardAppearance])
+            {
+                case UIKeyboardAppearanceDark:  toolbar.barStyle = UIBarStyleBlack;     break;
+                default:                        toolbar.barStyle = UIBarStyleDefault;   break;
+            }
+        }
+        [self reloadInputViews];
+        return;
+    }
     
     if(previousBarButtonConfiguration)
     {
