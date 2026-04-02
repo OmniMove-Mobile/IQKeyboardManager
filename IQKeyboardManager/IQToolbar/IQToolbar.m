@@ -43,6 +43,23 @@ NS_EXTENSION_UNAVAILABLE_IOS("Unavailable in extension")
     self.translucent = YES;
     self.barTintColor = nil;
 
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 260000
+    if (@available(iOS 26.0, *))
+    {
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 130000
+        UIToolbarAppearance *appearance = [[UIToolbarAppearance alloc] init];
+        [appearance configureWithDefaultBackground];
+        self.standardAppearance = appearance;
+        self.compactAppearance = appearance;
+
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 150000
+        self.scrollEdgeAppearance = appearance;
+        self.compactScrollEdgeAppearance = appearance;
+#endif
+#endif
+    }
+#endif
+
     NSArray <NSNumber*> *positions = @[@(UIBarPositionAny),@(UIBarPositionBottom),@(UIBarPositionTop),@(UIBarPositionTopAttached)];
 
     for (NSNumber *position in positions)

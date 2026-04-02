@@ -354,7 +354,8 @@ static inline void IQConfigureToolbarButtonStyleForIOS26(__unused UIBarButtonIte
         [items addObject:next];
     }
     
-    //Title
+    // Title placeholder should only participate in the toolbar layout when it has content.
+    if (titleText.length != 0)
     {
         //Flexible space
         [items addObject:[[self class] flexibleBarButtonItem]];
@@ -364,6 +365,15 @@ static inline void IQConfigureToolbarButtonStyleForIOS26(__unused UIBarButtonIte
         [items addObject:toolbar.titleBarButton];
         
         //Flexible space
+        [items addObject:[[self class] flexibleBarButtonItem]];
+    }
+    else
+    {
+        toolbar.titleBarButton.title = nil;
+    }
+
+    if (titleText.length == 0 && rightBarButtonConfiguration)
+    {
         [items addObject:[[self class] flexibleBarButtonItem]];
     }
     
