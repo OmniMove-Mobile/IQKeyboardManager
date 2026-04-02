@@ -174,16 +174,27 @@ import UIKit
 @available(iOSApplicationExtension, unavailable)
 @objc final class IQKeyboardToolbarView: UIView, UIInputViewAudioFeedback {
 
+    private enum Layout {
+        static let toolbarHeight: CGFloat = 44
+        static let minimumButtonWidth: CGFloat = 44
+        static let horizontalPadding: CGFloat = 8
+        static let interItemSpacing: CGFloat = 6
+        static let titleSpacing: CGFloat = 12
+    }
+
     private static func makeToolbarButton() -> UIButton {
         let button = UIButton(type: .custom)
         button.backgroundColor = .clear
-        button.contentEdgeInsets = UIEdgeInsets(top: 6, left: 10, bottom: 6, right: 10)
+        button.contentEdgeInsets = UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 10)
         button.titleLabel?.font = UIFont.systemFont(ofSize: 17)
         button.titleLabel?.lineBreakMode = .byTruncatingTail
         button.adjustsImageWhenDisabled = false
         button.adjustsImageWhenHighlighted = false
         button.imageView?.contentMode = .scaleAspectFit
         button.showsTouchWhenHighlighted = false
+        button.contentHorizontalAlignment = .center
+        button.contentVerticalAlignment = .center
+        button.isExclusiveTouch = true
         button.layer.cornerRadius = 0
         button.layer.masksToBounds = true
         return button
@@ -256,11 +267,11 @@ import UIKit
     }
 
     override func sizeThatFits(_ size: CGSize) -> CGSize {
-        CGSize(width: size.width, height: 44)
+        CGSize(width: size.width, height: Layout.toolbarHeight)
     }
 
     override var intrinsicContentSize: CGSize {
-        CGSize(width: UIView.noIntrinsicMetric, height: 44)
+        CGSize(width: UIView.noIntrinsicMetric, height: Layout.toolbarHeight)
     }
 
     override var tintColor: UIColor! {
@@ -281,7 +292,10 @@ import UIKit
 
     private func initialize() {
         autoresizingMask = .flexibleWidth
-        frame.size.height = 44
+        semanticContentAttribute = .unspecified
+        preservesSuperviewLayoutMargins = true
+        insetsLayoutMarginsFromSafeArea = false
+        frame.size.height = Layout.toolbarHeight
         clipsToBounds = true
         isOpaque = true
 
@@ -289,15 +303,17 @@ import UIKit
         addSubview(topBorderView)
 
         leadingStackView.axis = .horizontal
-        leadingStackView.spacing = 6
+        leadingStackView.spacing = Layout.interItemSpacing
         leadingStackView.alignment = .center
+        leadingStackView.semanticContentAttribute = .spatial
         leadingStackView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(leadingStackView)
 
         [previousButton, nextButton].forEach { button in
             button.translatesAutoresizingMaskIntoConstraints = false
             NSLayoutConstraint.activate([
-                button.heightAnchor.constraint(equalToConstant: 32)
+                button.heightAnchor.constraint(equalToConstant: Layout.toolbarHeight),
+                button.widthAnchor.constraint(greaterThanOrEqualToConstant: Layout.minimumButtonWidth)
             ])
             leadingStackView.addArrangedSubview(button)
         }
@@ -305,7 +321,8 @@ import UIKit
         doneButton.translatesAutoresizingMaskIntoConstraints = false
         doneButton.titleLabel?.font = UIFont.boldSystemFont(ofSize: 17)
         NSLayoutConstraint.activate([
-            doneButton.heightAnchor.constraint(equalToConstant: 32)
+            doneButton.heightAnchor.constraint(equalToConstant: Layout.toolbarHeight),
+            doneButton.widthAnchor.constraint(greaterThanOrEqualToConstant: Layout.minimumButtonWidth)
         ])
         addSubview(doneButton)
 
@@ -313,6 +330,8 @@ import UIKit
         titleLabel.font = UIFont.systemFont(ofSize: 13)
         titleLabel.textAlignment = .center
         titleLabel.lineBreakMode = .byTruncatingTail
+        titleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        titleLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
         addSubview(titleLabel)
 
         NSLayoutConstraint.activate([
@@ -321,19 +340,19 @@ import UIKit
             topBorderView.trailingAnchor.constraint(equalTo: trailingAnchor),
             topBorderView.heightAnchor.constraint(equalToConstant: 0.5),
 
-            leadingStackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
+            leadingStackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Layout.horizontalPadding),
             leadingStackView.centerYAnchor.constraint(equalTo: centerYAnchor),
 
-            doneButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
+            doneButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Layout.horizontalPadding),
             doneButton.centerYAnchor.constraint(equalTo: centerYAnchor),
 
             titleLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
             titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
-            titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: leadingStackView.trailingAnchor, constant: 12),
-            doneButton.leadingAnchor.constraint(greaterThanOrEqualTo: titleLabel.trailingAnchor, constant: 12)
+            titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: leadingStackView.trailingAnchor, constant: Layout.titleSpacing),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: doneButton.leadingAnchor, constant: -Layout.titleSpacing)
         ])
 
-        let titleWidthConstraint = titleLabel.widthAnchor.constraint(lessThanOrEqualTo: widthAnchor, multiplier: 0.45)
+        let titleWidthConstraint = titleLabel.widthAnchor.constraint(lessThanOrEqualTo: widthAnchor, multiplier: 0.5)
         titleWidthConstraint.priority = .defaultHigh
         titleWidthConstraint.isActive = true
 
@@ -347,12 +366,12 @@ import UIKit
         if let overrideColor = barTintColorOverride {
             backgroundColor = overrideColor
         } else if isDark {
-            backgroundColor = UIColor(red: 0.11, green: 0.11, blue: 0.12, alpha: 1.0)
+            backgroundColor = darkKeyboardBackgroundColor()
         } else {
             backgroundColor = defaultBackgroundColor()
         }
 
-        topBorderView.backgroundColor = isDark ? UIColor(white: 1.0, alpha: 0.12) : defaultSeparatorColor()
+        topBorderView.backgroundColor = isDark ? darkKeyboardSeparatorColor() : defaultSeparatorColor()
         if titleColor == nil {
             titleLabel.textColor = isDark ? UIColor(white: 0.82, alpha: 1.0) : defaultSecondaryLabelColor()
         }
@@ -374,6 +393,14 @@ import UIKit
         }
     }
 
+    private func darkKeyboardBackgroundColor() -> UIColor {
+        UIColor(red: 0.11, green: 0.11, blue: 0.12, alpha: 1.0)
+    }
+
+    private func darkKeyboardSeparatorColor() -> UIColor {
+        UIColor(white: 1.0, alpha: 0.12)
+    }
+
     private func defaultSecondaryLabelColor() -> UIColor {
         if #available(iOS 13.0, *) {
             return UIColor.secondaryLabel
@@ -387,7 +414,7 @@ import UIKit
         [previousButton, nextButton, doneButton].forEach { button in
             button.tintColor = resolvedTint
             button.setTitleColor(resolvedTint, for: .normal)
-            button.setTitleColor(resolvedTint.withAlphaComponent(0.35), for: .disabled)
+            button.setTitleColor(resolvedTint.withAlphaComponent(0.55), for: .disabled)
             button.setBackgroundImage(nil, for: .normal)
             button.setBackgroundImage(nil, for: .highlighted)
             button.setBackgroundImage(nil, for: .disabled)
@@ -400,15 +427,16 @@ import UIKit
         guard let item = item else {
             button.isHidden = true
             button.isEnabled = false
-            button.alpha = 0.35
             button.setImage(nil, for: .normal)
             button.setTitle(nil, for: .normal)
+            button.accessibilityLabel = nil
+            button.accessibilityIdentifier = nil
             return
         }
 
         button.isHidden = false
         button.isEnabled = item.isEnabled
-        button.alpha = item.isEnabled ? 1.0 : 0.35
+        button.alpha = item.isEnabled ? 1.0 : 0.55
         button.accessibilityLabel = item.accessibilityLabel
         button.accessibilityIdentifier = item.accessibilityIdentifier
 

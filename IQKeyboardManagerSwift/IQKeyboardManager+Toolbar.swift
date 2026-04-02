@@ -203,6 +203,8 @@ public extension IQKeyboardManager {
             }
         }
 
+        (textField.inputAccessoryView as? IQKeyboardToolbarView)?.refreshButtonStates()
+
         let elapsedTime = CACurrentMediaTime() - startTime
         showLog("<<<<< \(#function) ended: \(elapsedTime) seconds <<<<<", indentation: -1)
     }
