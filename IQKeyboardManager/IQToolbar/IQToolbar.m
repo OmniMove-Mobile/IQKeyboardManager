@@ -147,6 +147,7 @@ NS_EXTENSION_UNAVAILABLE_IOS("Unavailable in extension")
         if (@available(iOS 26.0, *))
         {
             _doneBarButton.style = UIBarButtonItemStylePlain;
+            _doneBarButton.hidesSharedBackground = YES;
         }
 #endif
     }
@@ -162,7 +163,7 @@ NS_EXTENSION_UNAVAILABLE_IOS("Unavailable in extension")
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 260000
         if (@available(iOS 26.0, *))
         {
-            _fixedSpaceBarButton.hidesSharedBackground = NO;
+            _fixedSpaceBarButton.hidesSharedBackground = YES;
         }
         else
         {

@@ -116,7 +116,7 @@ static inline void IQConfigureToolbarSpacerItemForIOS26(UIBarButtonItem *item)
 {
     if (@available(iOS 26.0, *))
     {
-        item.hidesSharedBackground = NO;
+        item.hidesSharedBackground = YES;
     }
 }
 
@@ -125,6 +125,7 @@ static inline void IQConfigureToolbarButtonStyleForIOS26(UIBarButtonItem *item)
     if (@available(iOS 26.0, *))
     {
         item.style = UIBarButtonItemStylePlain;
+        item.hidesSharedBackground = YES;
     }
 }
 #else
