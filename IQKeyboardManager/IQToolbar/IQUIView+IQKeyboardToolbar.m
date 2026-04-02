@@ -111,6 +111,32 @@ NS_EXTENSION_UNAVAILABLE_IOS("Unavailable in extension")
 NS_EXTENSION_UNAVAILABLE_IOS("Unavailable in extension")
 @implementation UIView (IQToolbarAddition)
 
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 260000
+static inline void IQConfigureToolbarSpacerItemForIOS26(UIBarButtonItem *item)
+{
+    if (@available(iOS 26.0, *))
+    {
+        item.hidesSharedBackground = NO;
+    }
+}
+
+static inline void IQConfigureToolbarButtonStyleForIOS26(UIBarButtonItem *item)
+{
+    if (@available(iOS 26.0, *))
+    {
+        item.style = UIBarButtonItemStylePlain;
+    }
+}
+#else
+static inline void IQConfigureToolbarSpacerItemForIOS26(__unused UIBarButtonItem *item)
+{
+}
+
+static inline void IQConfigureToolbarButtonStyleForIOS26(__unused UIBarButtonItem *item)
+{
+}
+#endif
+
 -(IQToolbar *)keyboardToolbar
 {
     IQToolbar *keyboardToolbar = nil;
@@ -203,6 +229,7 @@ NS_EXTENSION_UNAVAILABLE_IOS("Unavailable in extension")
     if (nilButton == nil)
     {
         nilButton = [[IQBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil];
+        IQConfigureToolbarSpacerItemForIOS26(nilButton);
     }
     
     return nilButton;
@@ -232,6 +259,7 @@ NS_EXTENSION_UNAVAILABLE_IOS("Unavailable in extension")
             prev.image = previousBarButtonConfiguration.image;
             prev.target = target;
             prev.action = previousBarButtonConfiguration.action;
+            IQConfigureToolbarButtonStyleForIOS26(prev);
         }
         else if (previousBarButtonConfiguration.image)
         {
@@ -241,6 +269,7 @@ NS_EXTENSION_UNAVAILABLE_IOS("Unavailable in extension")
             prev.accessibilityIdentifier = prev.accessibilityLabel;
             prev.enabled = toolbar.previousBarButton.enabled;
             prev.tag = toolbar.previousBarButton.tag;
+            IQConfigureToolbarButtonStyleForIOS26(prev);
             toolbar.previousBarButton = prev;
         }
         else if (previousBarButtonConfiguration.title)
@@ -251,6 +280,7 @@ NS_EXTENSION_UNAVAILABLE_IOS("Unavailable in extension")
             prev.accessibilityIdentifier = prev.accessibilityLabel;
             prev.enabled = toolbar.previousBarButton.enabled;
             prev.tag = toolbar.previousBarButton.tag;
+            IQConfigureToolbarButtonStyleForIOS26(prev);
             toolbar.previousBarButton = prev;
         }
         else
@@ -261,6 +291,7 @@ NS_EXTENSION_UNAVAILABLE_IOS("Unavailable in extension")
             prev.accessibilityIdentifier = prev.accessibilityLabel;
             prev.enabled = toolbar.previousBarButton.enabled;
             prev.tag = toolbar.previousBarButton.tag;
+            IQConfigureToolbarButtonStyleForIOS26(prev);
             toolbar.previousBarButton = prev;
         }
         
@@ -284,6 +315,7 @@ NS_EXTENSION_UNAVAILABLE_IOS("Unavailable in extension")
             next.image = nextBarButtonConfiguration.image;
             next.target = target;
             next.action = nextBarButtonConfiguration.action;
+            IQConfigureToolbarButtonStyleForIOS26(next);
         }
         else if (nextBarButtonConfiguration.image)
         {
@@ -293,6 +325,7 @@ NS_EXTENSION_UNAVAILABLE_IOS("Unavailable in extension")
             next.accessibilityIdentifier = next.accessibilityLabel;
             next.enabled = toolbar.nextBarButton.enabled;
             next.tag = toolbar.nextBarButton.tag;
+            IQConfigureToolbarButtonStyleForIOS26(next);
             toolbar.nextBarButton = next;
         }
         else if (nextBarButtonConfiguration.title)
@@ -303,6 +336,7 @@ NS_EXTENSION_UNAVAILABLE_IOS("Unavailable in extension")
             next.accessibilityIdentifier = next.accessibilityLabel;
             next.enabled = toolbar.nextBarButton.enabled;
             next.tag = toolbar.nextBarButton.tag;
+            IQConfigureToolbarButtonStyleForIOS26(next);
             toolbar.nextBarButton = next;
         }
         else
@@ -313,6 +347,7 @@ NS_EXTENSION_UNAVAILABLE_IOS("Unavailable in extension")
             next.accessibilityIdentifier = next.accessibilityLabel;
             next.enabled = toolbar.nextBarButton.enabled;
             next.tag = toolbar.nextBarButton.tag;
+            IQConfigureToolbarButtonStyleForIOS26(next);
             toolbar.nextBarButton = next;
         }
         
@@ -344,6 +379,7 @@ NS_EXTENSION_UNAVAILABLE_IOS("Unavailable in extension")
             done.image = rightBarButtonConfiguration.image;
             done.target = target;
             done.action = rightBarButtonConfiguration.action;
+            IQConfigureToolbarButtonStyleForIOS26(done);
         }
         else if (rightBarButtonConfiguration.image)
         {
@@ -353,6 +389,7 @@ NS_EXTENSION_UNAVAILABLE_IOS("Unavailable in extension")
             done.accessibilityIdentifier = done.accessibilityLabel;
             done.enabled = toolbar.doneBarButton.enabled;
             done.tag = toolbar.doneBarButton.tag;
+            IQConfigureToolbarButtonStyleForIOS26(done);
             toolbar.doneBarButton = done;
         }
         else if (rightBarButtonConfiguration.title)
@@ -363,6 +400,7 @@ NS_EXTENSION_UNAVAILABLE_IOS("Unavailable in extension")
             done.accessibilityIdentifier = done.accessibilityLabel;
             done.enabled = toolbar.doneBarButton.enabled;
             done.tag = toolbar.doneBarButton.tag;
+            IQConfigureToolbarButtonStyleForIOS26(done);
             toolbar.doneBarButton = done;
         }
         else
@@ -373,6 +411,7 @@ NS_EXTENSION_UNAVAILABLE_IOS("Unavailable in extension")
             done.accessibilityIdentifier = done.accessibilityLabel;
             done.enabled = toolbar.doneBarButton.enabled;
             done.tag = toolbar.doneBarButton.tag;
+            IQConfigureToolbarButtonStyleForIOS26(done);
             toolbar.doneBarButton = done;
         }
         

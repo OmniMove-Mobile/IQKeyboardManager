@@ -116,6 +116,12 @@ NS_EXTENSION_UNAVAILABLE_IOS("Unavailable in extension")
     if (_doneBarButton == nil)
     {
         _doneBarButton = [[IQBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:nil action:nil];
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 260000
+        if (@available(iOS 26.0, *))
+        {
+            _doneBarButton.style = UIBarButtonItemStylePlain;
+        }
+#endif
     }
     
     return _doneBarButton;
@@ -126,7 +132,18 @@ NS_EXTENSION_UNAVAILABLE_IOS("Unavailable in extension")
     if (_fixedSpaceBarButton == nil)
     {
         _fixedSpaceBarButton = [[IQBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFixedSpace target:nil action:nil];
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 260000
+        if (@available(iOS 26.0, *))
+        {
+            _fixedSpaceBarButton.hidesSharedBackground = NO;
+        }
+        else
+        {
+            [_fixedSpaceBarButton setWidth:6];
+        }
+#else
         [_fixedSpaceBarButton setWidth:6];
+#endif
     }
     
     return _fixedSpaceBarButton;
