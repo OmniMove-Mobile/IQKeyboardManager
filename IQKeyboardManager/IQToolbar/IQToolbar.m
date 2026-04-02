@@ -60,14 +60,24 @@ NS_EXTENSION_UNAVAILABLE_IOS("Unavailable in extension")
     }
 #endif
 
-    NSArray <NSNumber*> *positions = @[@(UIBarPositionAny),@(UIBarPositionBottom),@(UIBarPositionTop),@(UIBarPositionTopAttached)];
-
-    for (NSNumber *position in positions)
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 260000
+    if (@available(iOS 26.0, *))
     {
-        UIToolbarPosition toolbarPosition = [position unsignedIntegerValue];
+        // Preserve the system toolbar panel on iOS 26+, otherwise the accessory view
+        // falls back to detached floating button backgrounds instead of a flat bar.
+    }
+    else
+#endif
+    {
+        NSArray <NSNumber*> *positions = @[@(UIBarPositionAny),@(UIBarPositionBottom),@(UIBarPositionTop),@(UIBarPositionTopAttached)];
 
-        [self setBackgroundImage:nil forToolbarPosition:toolbarPosition barMetrics:UIBarMetricsDefault];
-        [self setShadowImage:nil forToolbarPosition:toolbarPosition];
+        for (NSNumber *position in positions)
+        {
+            UIToolbarPosition toolbarPosition = [position unsignedIntegerValue];
+
+            [self setBackgroundImage:nil forToolbarPosition:toolbarPosition barMetrics:UIBarMetricsDefault];
+            [self setShadowImage:nil forToolbarPosition:toolbarPosition];
+        }
     }
 }
 
