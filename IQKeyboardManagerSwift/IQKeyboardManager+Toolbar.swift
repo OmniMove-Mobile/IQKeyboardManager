@@ -130,6 +130,8 @@ public extension IQKeyboardManager {
                 textField.keyboardToolbar.nextBarButton.isEnabled = (siblings.last != textField)
             }
 
+            (textField.inputAccessoryView as? IQKeyboardToolbarView)?.refreshButtonStates()
+
         } else {
             textField.addKeyboardToolbarWithTarget(target: self, titleText: (shouldShowToolbarPlaceholder ? textField.drawingToolbarPlaceholder: nil), titleAccessibilityLabel: toolbarTitlBarButtonItemAccessibilityLabel, rightBarButtonConfiguration: rightConfiguration, previousBarButtonConfiguration: nil, nextBarButtonConfiguration: nil)
 
@@ -140,6 +142,7 @@ public extension IQKeyboardManager {
 
         // Setting toolbar tintColor //  (Enhancement ID: #30)
         toolbar.tintColor = shouldToolbarUsesTextFieldTintColor ? textField.tintColor : toolbarTintColor
+        let resolvedToolbarTintColor = shouldToolbarUsesTextFieldTintColor ? textField.tintColor : toolbarTintColor
 
         //  Setting toolbar to keyboard.
         if let textFieldView = textField as? UITextInput {
@@ -150,10 +153,22 @@ public extension IQKeyboardManager {
             case .dark?:
                 toolbar.barStyle = .black
                 toolbar.barTintColor = nil
+                if let toolbarView = textField.inputAccessoryView as? IQKeyboardToolbarView {
+                    toolbarView.barStyle = .black
+                    toolbarView.barTintColorOverride = nil
+                }
             default:
                 toolbar.barStyle = .default
                 toolbar.barTintColor = toolbarBarTintColor
+                if let toolbarView = textField.inputAccessoryView as? IQKeyboardToolbarView {
+                    toolbarView.barStyle = .default
+                    toolbarView.barTintColorOverride = toolbarBarTintColor
+                }
             }
+        }
+
+        if let toolbarView = textField.inputAccessoryView as? IQKeyboardToolbarView {
+            toolbarView.tintColor = resolvedToolbarTintColor
         }
 
         // Setting toolbar title font.   //  (Enhancement ID: #30)
@@ -167,15 +182,25 @@ public extension IQKeyboardManager {
 
             // Setting toolbar title font.   //  (Enhancement ID: #30)
             toolbar.titleBarButton.titleFont = placeholderFont
+            if let toolbarView = textField.inputAccessoryView as? IQKeyboardToolbarView {
+                toolbarView.titleText = textField.drawingToolbarPlaceholder
+                toolbarView.titleFont = placeholderFont
+            }
 
             // Setting toolbar title color.   //  (Enhancement ID: #880)
             toolbar.titleBarButton.titleColor = placeholderColor
+            if let toolbarView = textField.inputAccessoryView as? IQKeyboardToolbarView {
+                toolbarView.titleColor = placeholderColor
+            }
 
             // Setting toolbar button title color.   //  (Enhancement ID: #880)
             toolbar.titleBarButton.selectableTitleColor = placeholderButtonColor
 
         } else {
             toolbar.titleBarButton.title = nil
+            if let toolbarView = textField.inputAccessoryView as? IQKeyboardToolbarView {
+                toolbarView.titleText = nil
+            }
         }
 
         let elapsedTime = CACurrentMediaTime() - startTime
@@ -199,7 +224,7 @@ public extension IQKeyboardManager {
         showLog("Found \(siblings.count) responder sibling(s)")
 
         for view in siblings {
-            if let toolbar = view.inputAccessoryView as? IQToolbar {
+            if let toolbar = view.inputAccessoryView, toolbar is IQToolbar || toolbar is IQKeyboardToolbarView {
 
                 // setInputAccessoryView: check   (Bug ID: #307)
                 if view.responds(to: #selector(setter: UITextField.inputAccessoryView)),

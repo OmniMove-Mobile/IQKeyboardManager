@@ -123,8 +123,17 @@ UIView category methods to add IQToolbar on UIKeyboard.
 
     private struct AssociatedKeys {
         static var keyboardToolbar: Int = 0
+        static var keyboardToolbarView: Int = 0
         static var shouldHideToolbarPlaceholder: Int = 0
         static var toolbarPlaceholder: Int = 0
+    }
+
+    private static var shouldUseCustomAccessoryToolbar: Bool {
+        if #available(iOS 26.0, *) {
+            return true
+        } else {
+            return false
+        }
     }
 
     // MARK: Toolbar
@@ -160,6 +169,27 @@ UIView category methods to add IQToolbar on UIKeyboard.
         }
     }
 
+    private var keyboardToolbarView: IQKeyboardToolbarView {
+        if let toolbarView = inputAccessoryView as? IQKeyboardToolbarView {
+            return toolbarView
+        }
+
+        if let toolbarView = objc_getAssociatedObject(self, &AssociatedKeys.keyboardToolbarView) as? IQKeyboardToolbarView {
+            return toolbarView
+        }
+
+        let width: CGFloat
+        if #available(iOS 13.0, *) {
+            width = window?.windowScene?.screen.bounds.width ?? .zero
+        } else {
+            width = UIScreen.main.bounds.width
+        }
+
+        let toolbarView = IQKeyboardToolbarView(frame: CGRect(origin: .zero, size: .init(width: width, height: 44)))
+        objc_setAssociatedObject(self, &AssociatedKeys.keyboardToolbarView, toolbarView, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        return toolbarView
+    }
+
     // MARK: Toolbar title
 
     /**
@@ -172,6 +202,9 @@ UIView category methods to add IQToolbar on UIKeyboard.
         set(newValue) {
             objc_setAssociatedObject(self, &AssociatedKeys.shouldHideToolbarPlaceholder, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
             self.keyboardToolbar.titleBarButton.title = self.drawingToolbarPlaceholder
+            if UIView.shouldUseCustomAccessoryToolbar {
+                self.keyboardToolbarView.titleText = self.drawingToolbarPlaceholder
+            }
         }
     }
 
@@ -185,6 +218,9 @@ UIView category methods to add IQToolbar on UIKeyboard.
         set(newValue) {
             objc_setAssociatedObject(self, &AssociatedKeys.toolbarPlaceholder, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
             self.keyboardToolbar.titleBarButton.title = self.drawingToolbarPlaceholder
+            if UIView.shouldUseCustomAccessoryToolbar {
+                self.keyboardToolbarView.titleText = self.drawingToolbarPlaceholder
+            }
         }
     }
 
@@ -240,6 +276,76 @@ UIView category methods to add IQToolbar on UIKeyboard.
 
             //  Creating a toolBar for phoneNumber keyboard
             let toolbar = self.keyboardToolbar
+
+            if UIView.shouldUseCustomAccessoryToolbar {
+
+                func buildBarButtonItem(from config: IQBarButtonItemConfiguration, existingItem: IQBarButtonItem) -> IQBarButtonItem {
+                    let item: IQBarButtonItem
+
+                    if let image = config.image {
+                        item = IQBarButtonItem(image: image, style: .plain, target: target, action: config.action)
+                    } else if let title = config.title {
+                        item = IQBarButtonItem(title: title, style: .plain, target: target, action: config.action)
+                    } else {
+                        let title: String
+                        switch config.barButtonSystemItem {
+                        case .done?:
+                            title = "Done"
+                        case .cancel?:
+                            title = "Cancel"
+                        default:
+                            title = config.accessibilityLabel ?? ""
+                        }
+                        item = IQBarButtonItem(title: title, style: .plain, target: target, action: config.action)
+                    }
+
+                    item.invocation = existingItem.invocation
+                    item.accessibilityLabel = config.accessibilityLabel
+                    item.accessibilityIdentifier = config.accessibilityLabel
+                    item.isEnabled = existingItem.isEnabled
+                    item.tag = existingItem.tag
+                    return item
+                }
+
+                if let prevConfig = previousBarButtonConfiguration {
+                    toolbar.previousBarButton = buildBarButtonItem(from: prevConfig, existingItem: toolbar.previousBarButton)
+                }
+
+                if let nextConfig = nextBarButtonConfiguration {
+                    toolbar.nextBarButton = buildBarButtonItem(from: nextConfig, existingItem: toolbar.nextBarButton)
+                }
+
+                if let rightConfig = rightBarButtonConfiguration {
+                    toolbar.doneBarButton = buildBarButtonItem(from: rightConfig, existingItem: toolbar.doneBarButton)
+                }
+
+                let accessoryView = self.keyboardToolbarView
+                accessoryView.previousBarButton = previousBarButtonConfiguration != nil ? toolbar.previousBarButton : nil
+                accessoryView.nextBarButton = nextBarButtonConfiguration != nil ? toolbar.nextBarButton : nil
+                accessoryView.doneBarButton = rightBarButtonConfiguration != nil ? toolbar.doneBarButton : nil
+                accessoryView.titleText = titleText
+                accessoryView.refreshButtonStates()
+
+                if let textInput = self as? UITextInput {
+                    switch textInput.keyboardAppearance {
+                    case .dark?:
+                        accessoryView.barStyle = .black
+                    default:
+                        accessoryView.barStyle = .default
+                    }
+                }
+
+                let shouldReloadInputViews = !(self.inputAccessoryView is IQKeyboardToolbarView)
+                if let textField = self as? UITextField {
+                    textField.inputAccessoryView = accessoryView
+                } else if let textView = self as? UITextView {
+                    textView.inputAccessoryView = accessoryView
+                }
+                if shouldReloadInputViews {
+                    self.reloadInputViews()
+                }
+                return
+            }
 
             var items: [IQBarButtonItem] = []
 
